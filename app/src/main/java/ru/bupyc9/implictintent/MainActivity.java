@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -44,11 +45,11 @@ public class MainActivity extends AppCompatActivity {
         mSendTextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Intent.ACTION_SEND);
-                i
+                Intent i = ShareCompat.IntentBuilder.from(MainActivity.this)
                     .setType("text/plain")
-                    .putExtra(Intent.EXTRA_TEXT, "test")
-                    .putExtra(Intent.EXTRA_SUBJECT, "subject");
+                    .setText("test")
+                    .setSubject("subject")
+                    .getIntent();
 
                 i = Intent.createChooser(i, "выбери меня");
 
