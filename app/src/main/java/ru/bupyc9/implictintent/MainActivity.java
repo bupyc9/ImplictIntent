@@ -1,6 +1,7 @@
 package ru.bupyc9.implictintent;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
@@ -27,6 +28,11 @@ public class MainActivity extends AppCompatActivity {
         mContactView = (TextView) findViewById(R.id.textView);
 
         final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+
+        PackageManager packageManager = getPackageManager();
+        if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+            mContactsButton.setEnabled(false);
+        }
 
         mContactsButton.setOnClickListener(new View.OnClickListener() {
             @Override
