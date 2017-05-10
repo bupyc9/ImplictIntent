@@ -15,9 +15,11 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
     private Button mContactsButton;
     private Button mSendTextButton;
+    private Button mCallButton;
     private TextView mContactView;
 
     private static final int REQUEST_CONTACT = 1;
+    private static final int REQUEST_CONTACT_PHONE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +28,18 @@ public class MainActivity extends AppCompatActivity {
 
         mContactsButton = (Button) findViewById(R.id.button);
         mSendTextButton = (Button) findViewById(R.id.button2);
+        mCallButton = (Button) findViewById(R.id.call);
         mContactView = (TextView) findViewById(R.id.textView);
 
         final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+        final Intent callContact = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
 
         PackageManager packageManager = getPackageManager();
         if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
             mContactsButton.setEnabled(false);
+        }
+        if (packageManager.resolveActivity(callContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+            mCallButton.setEnabled(false);
         }
 
         mContactsButton.setOnClickListener(new View.OnClickListener() {
@@ -56,31 +63,76 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+
+        mCallButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(callContact, REQUEST_CONTACT_PHONE);
+            }
+        });
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CONTACT && data != null) {
-            Uri contactUri = data.getData();
+        if (data == null) {
+            return;
+        }
 
-            String[] queryFields = new String[] {
-                ContactsContract.Contacts.DISPLAY_NAME
-            };
+        switch (requestCode) {
+            case REQUEST_CONTACT:
+                processRequestContact(data);
+                break;
+            case REQUEST_CONTACT_PHONE:
+                processRequestContactPhone(data);
+        }
+    }
 
-            Cursor c = getContentResolver().query(contactUri, queryFields, null, null, null);
+    private void processRequestContact(Intent data) {
+        Uri contactUri = data.getData();
 
-            try {
-                if (c.getCount() == 0) {
-                    return;
-                }
+        String[] queryFields = new String[] {
+            ContactsContract.Contacts.DISPLAY_NAME
+        };
 
-                c.moveToFirst();
-                String suspect = c.getString(0);
-                mContactView.setText(suspect);
-            } finally {
-                c.close();
+        Cursor c = getContentResolver().query(contactUri, queryFields, null, null, null);
+
+        try {
+            if (c.getCount() == 0) {
+                return;
             }
 
+            c.moveToFirst();
+            String suspect = c.getString(0);
+            mContactView.setText(suspect);
+        } finally {
+            c.close();
         }
+    }
+
+    private void processRequestContactPhone(Intent data) {
+        Uri contactUri = data.getData();
+
+        String[] queryFields = new String[] {
+            ContactsContract.CommonDataKinds.Phone.NUMBER
+        };
+
+        Cursor c = getContentResolver().query(contactUri, queryFields, null, null, null);
+
+        try {
+            if (c.getCount() == 0) {
+                return;
+            }
+
+            c.moveToFirst();
+            String phone = c.getString(0);
+            callPhone(phone);
+        } finally {
+            c.close();
+        }
+    }
+
+    private void callPhone(String phone) {
+        Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone));
+        startActivity(i);
     }
 }
